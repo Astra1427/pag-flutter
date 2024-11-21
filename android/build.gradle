@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.20"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.20"
     }
 }
 
@@ -34,6 +34,6 @@ android {
 
 
 dependencies {
-    implementation "com.tencent.tav:libpag:3.2.7.43"
+    implementation "com.tencent.tav:libpag:4.3.68"
     implementation 'com.jakewharton:disklrucache:2.0.2'
 }

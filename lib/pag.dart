@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/file.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:pag/models/PagReplaceImage.dart';
+import 'package:pag/models/PagReplaceText.dart';
+
+export 'package:pag/models/PagReplaceImage.dart';
+export 'package:pag/models/PagReplaceText.dart';
 
 typedef PAGCallback = void Function();
 
@@ -46,6 +53,12 @@ class PAGView extends StatefulWidget {
   /// 加载失败时的默认控件构造器
   Widget Function(BuildContext context)? defaultBuilder;
 
+  /// 替换占位图片
+  List<PagReplaceImage> replaceImages;
+
+  /// 替换占位文字
+  List<PagReplaceText> replaceTexts;
+
   static const int REPEAT_COUNT_LOOP = -1; //无限循环
   static const int REPEAT_COUNT_DEFAULT = 1; //默认仅播放一次
 
@@ -62,6 +75,8 @@ class PAGView extends StatefulWidget {
     this.onAnimationCancel,
     this.onAnimationRepeat,
     this.defaultBuilder,
+    this.replaceImages = const [],
+    this.replaceTexts = const [],
     Key? key,
   }) : super(key: key);
 
@@ -79,6 +94,8 @@ class PAGView extends StatefulWidget {
     this.onAnimationCancel,
     this.onAnimationRepeat,
     this.defaultBuilder,
+    this.replaceImages = const [],
+    this.replaceTexts = const [],
     Key? key,
   }) : super(key: key);
 
@@ -96,6 +113,8 @@ class PAGView extends StatefulWidget {
     this.onAnimationCancel,
     this.onAnimationRepeat,
     this.defaultBuilder,
+    this.replaceImages = const [],
+    this.replaceTexts = const [],
     Key? key,
   }) : super(key: key);
 
@@ -118,6 +137,8 @@ class PAGViewState extends State<PAGView> {
   static const String _nativePause = 'pause';
   static const String _nativeSetProgress = 'setProgress';
   static const String _nativeGetPointLayer = 'getLayersUnderPoint';
+  static const String _nativeSetReplaceImages = 'setReplaceImages';
+  static const String _nativeSetReplaceTexts = 'setReplaceTexts';
 
   // 参数
   static const String _argumentTextureId = 'textureId';
@@ -135,6 +156,12 @@ class PAGViewState extends State<PAGView> {
   static const String _argumentProgress = 'progress';
   static const String _argumentEvent = 'PAGEvent';
 
+  /// 要替换的图片参数
+  static const String _argumentReplaceImages = 'replaceImages';
+
+  /// 要替换的文字参数
+  static const String _argumentReplaceTexts = 'replaceTexts';
+
   // 监听该函数
   static const String _playCallback = 'PAGCallback';
   static const String _eventStart = 'onAnimationStart';
@@ -147,7 +174,8 @@ class PAGViewState extends State<PAGView> {
   static MethodChannel _channel = (const MethodChannel('flutter_pag_plugin')
     ..setMethodCallHandler((result) {
       if (result.method == _playCallback) {
-        callbackHandlers[result.arguments[_argumentTextureId]]?.call(result.arguments[_argumentEvent]);
+        callbackHandlers[result.arguments[_argumentTextureId]]
+            ?.call(result.arguments[_argumentEvent]);
       }
 
       return Future<dynamic>.value();
@@ -158,16 +186,44 @@ class PAGViewState extends State<PAGView> {
   @override
   void initState() {
     super.initState();
-    newTexture();
+    WidgetsBinding.instance.addPostFrameCallback((timestamp) async {
+      await newTexture();
+
+      /// 替换文字
+      replaceTexts(replaceTexts: widget.replaceTexts);
+
+      /// 从网络或者缓存获取图片
+      var imgFiles =
+          await _getImages(widget.replaceImages.map((e) => e.imgUrl).toList());
+
+      /// 替换图片
+      replaceImages(
+          images: List.generate(
+              imgFiles.length,
+              (i) => PagReplaceImagePath(
+                  index: widget.replaceImages[i].index,
+                  imgPath: imgFiles[i].path)));
+    });
   }
 
   // 初始化
-  void newTexture() async {
-    int repeatCount = widget.repeatCount <= 0 && widget.repeatCount != PAGView.REPEAT_COUNT_LOOP ? PAGView.REPEAT_COUNT_DEFAULT : widget.repeatCount;
+  Future<void> newTexture() async {
+    int repeatCount = widget.repeatCount <= 0 &&
+            widget.repeatCount != PAGView.REPEAT_COUNT_LOOP
+        ? PAGView.REPEAT_COUNT_DEFAULT
+        : widget.repeatCount;
     double initProcess = widget.initProgress < 0 ? 0 : widget.initProgress;
 
     try {
-      dynamic result = await _channel.invokeMethod(_nativeInit, {_argumentAssetName: widget.assetName, _argumentPackage: widget.package, _argumentUrl: widget.url, _argumentBytes: widget.bytesData, _argumentRepeatCount: repeatCount, _argumentInitProgress: initProcess, _argumentAutoPlay: widget.autoPlay});
+      dynamic result = await _channel.invokeMethod(_nativeInit, {
+        _argumentAssetName: widget.assetName,
+        _argumentPackage: widget.package,
+        _argumentUrl: widget.url,
+        _argumentBytes: widget.bytesData,
+        _argumentRepeatCount: repeatCount,
+        _argumentInitProgress: initProcess,
+        _argumentAutoPlay: widget.autoPlay,
+      });
       if (result is Map) {
         _textureId = result[_argumentTextureId];
         rawWidth = result[_argumentWidth] ?? 0;
@@ -228,7 +284,40 @@ class PAGViewState extends State<PAGView> {
     if (!_hasLoadTexture) {
       return;
     }
-    _channel.invokeMethod(_nativeSetProgress, {_argumentTextureId: _textureId, _argumentProgress: progress});
+    _channel.invokeMethod(_nativeSetProgress,
+        {_argumentTextureId: _textureId, _argumentProgress: progress});
+  }
+
+  /// 替换占位图片
+  void replaceImages({required List<PagReplaceImagePath> images}) {
+    if (!_hasLoadTexture) {
+      return;
+    }
+    _channel.invokeMethod(_nativeSetReplaceImages, {
+      _argumentTextureId: _textureId,
+      _argumentReplaceImages: images.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  /// 替换占位文字
+  void replaceTexts({required List<PagReplaceText> replaceTexts}) {
+    if (!_hasLoadTexture || replaceTexts.isEmpty) {
+      return;
+    }
+    _channel.invokeMethod(_nativeSetReplaceTexts, {
+      _argumentTextureId: _textureId,
+      _argumentReplaceTexts: widget.replaceTexts.map((e) => e.toJson()),
+    });
+  }
+
+  Future<List<File>> _getImages(List<String> imageUrls) {
+    if (imageUrls.isEmpty) return Future.value([]);
+
+    return Future.wait(List.generate(
+        imageUrls.length,
+        (index) => DefaultCacheManager().getSingleFile(
+              imageUrls[index],
+            )));
   }
 
   /// 获取某一位置的图层
@@ -236,7 +325,13 @@ class PAGViewState extends State<PAGView> {
     if (!_hasLoadTexture) {
       return [];
     }
-    return (await _channel.invokeMethod(_nativeGetPointLayer, {_argumentTextureId: _textureId, _argumentPointX: x, _argumentPointY: y}) as List).map((e) => e.toString()).toList();
+    return (await _channel.invokeMethod(_nativeGetPointLayer, {
+      _argumentTextureId: _textureId,
+      _argumentPointX: x,
+      _argumentPointY: y
+    }) as List)
+        .map((e) => e.toString())
+        .toList();
   }
 
   @override

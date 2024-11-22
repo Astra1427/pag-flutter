@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # 下载的文件缓存管理
+  flutter_cache_manager: ^3.3.1
 
 dev_dependencies:
   flutter_test:

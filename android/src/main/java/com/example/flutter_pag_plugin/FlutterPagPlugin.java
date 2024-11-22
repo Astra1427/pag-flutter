@@ -8,6 +8,8 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.libpag.PAGFile;
 import org.libpag.PAGLayer;
 import org.libpag.PAGSurface;
@@ -15,6 +17,7 @@ import org.libpag.PAGSurface;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
@@ -56,6 +59,8 @@ public class FlutterPagPlugin implements FlutterPlugin, MethodCallHandler {
     final static String _nativePause = "pause";
     final static String _nativeSetProgress = "setProgress";
     final static String _nativeGetPointLayer = "getLayersUnderPoint";
+    final static String _nativeSetReplaceImages = "setReplaceImages";
+    final static String _nativeSetReplaceTexts = "setReplaceTexts";
 
     // 参数
     final static String _argumentTextureId = "textureId";
@@ -72,6 +77,8 @@ public class FlutterPagPlugin implements FlutterPlugin, MethodCallHandler {
     final static String _argumentPointY = "y";
     final static String _argumentProgress = "progress";
     final static String _argumentEvent = "PAGEvent";
+    final static String _argumentReplaceImages = "replaceImages";
+    final static String _argumentReplaceTexts = "replaceTexts";
 
     // 回调
     final static String _playCallback = "PAGCallback";
@@ -147,6 +154,14 @@ public class FlutterPagPlugin implements FlutterPlugin, MethodCallHandler {
             case _nativeGetPointLayer:
                 result.success(getLayersUnderPoint(call));
                 break;
+            case _nativeSetReplaceImages:
+                replaceImages(call);
+                result.success("");
+                break;
+            case _nativeSetReplaceTexts:
+                replaceTexts(call);
+                result.success("");
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -158,6 +173,11 @@ public class FlutterPagPlugin implements FlutterPlugin, MethodCallHandler {
         byte[] bytes = call.argument(_argumentBytes);
         String url = call.argument(_argumentUrl);
         String flutterPackage = call.argument(_argumentPackage);
+
+
+
+//        PagReplaceImageModel[] replaceImages = call.argument(_argumentReplaceImages);
+//        PagReplaceTextModel[] replaceTexts = call.argument(_argumentReplaceTexts);
 
         if (bytes != null) {
             initPagPlayerAndCallback(PAGFile.Load(bytes), call, result);
@@ -314,6 +334,45 @@ public class FlutterPagPlugin implements FlutterPlugin, MethodCallHandler {
         }
 
         return layerNames;
+    }
+
+    void replaceImages(MethodCall call) {
+        FlutterPagPlayer flutterPagPlayer = getFlutterPagPlayer(call);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> objectMaps = (List<Map<String, Object>>) call.argument(_argumentReplaceImages);
+
+        for (Map<String, Object> item : objectMaps) {
+            try {
+                JSONObject jsonObject = new JSONObject(item);
+                PagReplaceImageModel model = PagReplaceImageModel.fromJson(jsonObject);
+                flutterPagPlayer.replaceImage(flutterPagPlayer.getFile(), model);
+            } catch (JSONException e) {
+                // 处理 JSON 解析错误（可以记录日志或抛出运行时异常）
+                e.printStackTrace();
+                throw new IllegalArgumentException("Invalid replaceImages JSON data: " + item, e);
+            }
+        }
+    }
+
+
+    void replaceTexts(MethodCall call) {
+        FlutterPagPlayer flutterPagPlayer = getFlutterPagPlayer(call);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> objectMaps = (List<Map<String, Object>>) call.argument(_argumentReplaceTexts);
+
+        for (Map<String, Object> item : objectMaps) {
+            try {
+                JSONObject jsonObject = new JSONObject(item);
+                PagReplaceTextModel model = PagReplaceTextModel.fromJson(jsonObject);
+                flutterPagPlayer.replaceText(flutterPagPlayer.getFile(), model);
+            } catch (JSONException e) {
+                // 处理 JSON 解析错误（可以记录日志或抛出运行时异常）
+                e.printStackTrace();
+                throw new IllegalArgumentException("Invalid replaceTexts JSON data: " + item, e);
+            }
+        }
     }
 
     FlutterPagPlayer getFlutterPagPlayer(MethodCall call) {

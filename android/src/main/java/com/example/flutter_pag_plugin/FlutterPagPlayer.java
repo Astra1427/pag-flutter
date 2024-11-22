@@ -8,8 +8,11 @@ import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 
 import org.libpag.PAGFile;
+import org.libpag.PAGImage;
 import org.libpag.PAGPlayer;
+import org.libpag.PAGText;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -32,6 +35,12 @@ public class FlutterPagPlayer extends PAGPlayer {
     private MethodChannel channel;
     private long textureId;
 
+    private PAGFile file;
+
+    public PAGFile getFile() {
+        return file;
+    }
+
     private static final ExecutorService sTaskExecutor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
 
@@ -43,6 +52,7 @@ public class FlutterPagPlayer extends PAGPlayer {
         }
     });
 
+    /// 初始化Pag Player
     public void init(PAGFile file, int repeatCount, double initProgress, MethodChannel channel, long textureId) {
         setComposition(file);
         this.channel = channel;
@@ -50,6 +60,7 @@ public class FlutterPagPlayer extends PAGPlayer {
         progress = initProgress;
         this.initProgress = initProgress;
         initAnimator(repeatCount);
+        this.file = file;
     }
 
     private void initAnimator(int repeatCount) {
@@ -94,6 +105,33 @@ public class FlutterPagPlayer extends PAGPlayer {
         isRelease = true;
         animator.end();
         getSurface().release();
+    }
+
+
+    public void replaceImage(PAGFile pagFile, PagReplaceImageModel replaceModel) {
+        if (pagFile == null || replaceModel.index >= pagFile.numImages()) {
+            return;
+        }
+        // 直接替换图片资源
+        PAGImage image = PAGImage.FromPath(replaceModel.imgPath);
+        pagFile.replaceImage(replaceModel.index, image);
+    }
+
+    public void replaceText(PAGFile pagFile, PagReplaceTextModel replaceModel) {
+        if (pagFile == null || replaceModel.index >= pagFile.numTexts()) {
+            return;
+        }
+        // 直接替换占位文字
+        final PAGText pagText = pagFile.getTextData(replaceModel.index);
+        pagText.text = replaceModel.text;
+        pagText.fillColor = replaceModel.fillColor;
+        pagFile.replaceText(replaceModel.index, pagText);
+    }
+
+
+    private PAGImage makePAGImage(byte[] var0) {
+        // 通过选取的素材 bytes 构建PAGImage（视频素材需要用PAGMovie构建）
+        return PAGImage.FromBytes(var0);
     }
 
     public void flushAsync() {

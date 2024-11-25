@@ -8,7 +8,8 @@
 
 #import <Foundation/Foundation.h>
 #import <Flutter/Flutter.h>
-
+#import "PagReplaceImageModel.h"
+#import "PagReplaceTextModel.h"
 NS_ASSUME_NONNULL_BEGIN
 
 #define EventStart @"onAnimationStart"
@@ -46,6 +47,11 @@ typedef void(^PAGEventCallback)(NSString *);
 - (void)setRepeatCount:(int)repeatCount;
 
 - (NSArray<NSString *> *)getLayersUnderPoint:(CGPoint)point;
+
+- (void)replaceImage:(PagReplaceImageModel*) imgModel;
+
+- (void)replaceText:(PagReplaceTextModel*) textModel;
+
 
 @end
 

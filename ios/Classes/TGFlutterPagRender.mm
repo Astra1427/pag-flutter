@@ -15,6 +15,9 @@
 #include <libpag/PAGPlayer.h>
 #include <chrono>
 #include <mutex>
+#import "PagReplaceImageModel.h"
+#import "PagReplaceTextModel.h"
+
 
 @interface TGFlutterPagRender()
 
@@ -159,6 +162,22 @@ static int64_t GetCurrentTimeUS() {
     }
     return layerNames;
 }
+
+
+- (void)replaceImage:(PagReplaceImageModel*) imgModel
+{
+    [_pagFile replaceImage:(int)(imgModel.index) data:[PAGImage FromPath:imgModel.imgPath]];
+}
+
+- (void)replaceText:(PagReplaceTextModel *)textModel
+{
+    PAGText* pagText = [_pagFile getTextData:(int)(textModel.index)];
+    pagText.text = textModel.text;
+    pagText.fontSize = textModel.fontSize;
+    
+    [_pagFile replaceText:(int)(textModel.index) data:pagText];
+}
+
 
 - (CGSize)size{
     return CGSizeMake(_pagFile.width, _pagFile.height);

@@ -56,6 +56,29 @@
     result(names);
 }
 
+- (void)setReplaceImages:(id)arguments result:(FlutterResult _Nonnull)result {
+    NSNumber* textureId = arguments[@"textureId"];
+    NSArray* jsonList = arguments[@"replaceImages"];
+    TGFlutterPagRender *render = [_renderMap objectForKey:textureId];
+    for(NSDictionary* item in jsonList){
+        PagReplaceImageModel* model = [PagReplaceImageModel fromJson:item];
+        [render replaceImage:model];
+    }
+    
+    result(@"");
+}
+- (void)setReplaceTexts:(id)arguments result:(FlutterResult _Nonnull)result {
+    NSNumber* textureId = arguments[@"textureId"];
+    NSArray* jsonList = arguments[@"replaceTexts"];
+    TGFlutterPagRender *render = [_renderMap objectForKey:textureId];
+    for(NSDictionary* item in jsonList){
+        PagReplaceTextModel* model = [PagReplaceTextModel fromJson:item];
+        [render replaceText:model];
+    }
+    
+    result(@"");
+}
+
 - (void)release:(id)arguments result:(FlutterResult _Nonnull)result {
     NSNumber* textureId = arguments[@"textureId"];
     if(textureId == nil){
@@ -210,7 +233,13 @@
         [self release:arguments result:result];
     } else if([@"getLayersUnderPoint" isEqualToString:call.method]){
         [self getLayersUnderPoint:arguments result:result];
-    } else {
+    } else if([@"setReplaceImages" isEqualToString:call.method]){
+        [self setReplaceImages:arguments result:result];
+
+    } else if([@"setReplaceTexts" isEqualToString:call.method]){
+        [self setReplaceTexts:arguments result:result];
+
+    }else {
         result(FlutterMethodNotImplemented);
     }
 }

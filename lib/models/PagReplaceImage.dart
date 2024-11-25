@@ -12,7 +12,7 @@ class PagReplaceImage {
   Map<String, dynamic> toJson() {
     return {
       'index': index,
-      'imgUrl': imgUrl, // 转换为 Base64 字符串
+      'imgUrl': imgUrl,
     };
   }
 
@@ -27,6 +27,7 @@ class PagReplaceImage {
 
 class PagReplaceImagePath{
   final int index;
+  /// 图片本地路径
   final String imgPath;
 
   PagReplaceImagePath({required this.index, required this.imgPath});
@@ -35,7 +36,7 @@ class PagReplaceImagePath{
   Map<String, dynamic> toJson() {
     return {
       'index': index,
-      'imgPath': imgPath, // 转换为 Base64 字符串
+      'imgPath': imgPath,
     };
   }
 }

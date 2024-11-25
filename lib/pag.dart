@@ -306,7 +306,7 @@ class PAGViewState extends State<PAGView> {
     }
     _channel.invokeMethod(_nativeSetReplaceTexts, {
       _argumentTextureId: _textureId,
-      _argumentReplaceTexts: widget.replaceTexts.map((e) => e.toJson()),
+      _argumentReplaceTexts: replaceTexts.map((e) => e.toJson()).toList(),
     });
   }
 

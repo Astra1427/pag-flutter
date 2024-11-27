@@ -173,7 +173,10 @@ static int64_t GetCurrentTimeUS() {
 {
     PAGText* pagText = [_pagFile getTextData:(int)(textModel.index)];
     pagText.text = textModel.text;
-    pagText.fontSize = textModel.fontSize;
+    if(textModel.fontSize != 0){
+        pagText.fontSize = textModel.fontSize;
+    }
+
     
     [_pagFile replaceText:(int)(textModel.index) data:pagText];
 }

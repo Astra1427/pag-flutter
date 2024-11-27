@@ -14,10 +14,10 @@ public class PagReplaceTextModel {
     /// replace placeholder to data
     final String text;
     public float fontSize;
-    public int fillColor;
+    public Integer fillColor;
 
 
-    public PagReplaceTextModel(int index, String text, float fontSize, int fillColor) {
+    public PagReplaceTextModel(int index, String text, float fontSize, Integer fillColor) {
         this.index = index;
         this.text = text;
         this.fontSize = fontSize;
@@ -28,8 +28,8 @@ public class PagReplaceTextModel {
     public static PagReplaceTextModel fromJson(JSONObject jsonObject) throws JSONException {
         int index = jsonObject.getInt("index");
         String text = jsonObject.getString("text");
-        float fontSize = (float) jsonObject.getDouble("fontSize");
-        int fillColor = jsonObject.getInt("fillColor");
+        float fontSize = jsonObject.has("fontSize") ? (float) jsonObject.getDouble("fontSize") : 0;
+        Integer fillColor = jsonObject.has("fillColor") ? jsonObject.getInt("fillColor") : null;
         return new PagReplaceTextModel(index, text, fontSize, fillColor);
     }
 }

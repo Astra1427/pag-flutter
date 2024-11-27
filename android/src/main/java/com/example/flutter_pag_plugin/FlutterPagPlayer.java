@@ -124,7 +124,13 @@ public class FlutterPagPlayer extends PAGPlayer {
         // 直接替换占位文字
         final PAGText pagText = pagFile.getTextData(replaceModel.index);
         pagText.text = replaceModel.text;
-        pagText.fillColor = replaceModel.fillColor;
+        if(replaceModel.fillColor != null)
+        {
+            pagText.fillColor = replaceModel.fillColor;
+        }
+        if(replaceModel.fontSize != 0){
+            pagText.fontSize = replaceModel.fontSize;
+        }
         pagFile.replaceText(replaceModel.index, pagText);
     }
 
